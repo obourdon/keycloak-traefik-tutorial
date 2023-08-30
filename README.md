@@ -2,7 +2,7 @@
 
 This repo is made based on https://github.com/ibuetler/docker-keycloak-traefik-workshop
 
-For the sake of this tutorial I have chosen the whoami Docker image we want to add authentication using Keycloak. The whoami application is a tiny Go webserver that prints os information and HTTP request to output. The whoami sample application is not asking for a username and password. You can grab the whoami docker from https://hub.docker.com/r/containous/whoami . The whoami web port is listening on port `80`.
+For the sake of this tutorial I have chosen the whoami Docker image we want to add authentication using Keycloak. The whoami application is a tiny Go webserver that prints OS information and HTTP request to output. The whoami sample application is not asking for a username and password. You can grab the whoami docker from https://hub.docker.com/r/containous/whoami . The whoami web port is listening on port `80`.
 
 ## Test Running Application
 
@@ -10,13 +10,16 @@ For the sake of this tutorial I have chosen the whoami Docker image we want to a
 docker pull containous/whoami
 docker run --rm -i -p 80:80 containous/whoami
 CTRL+C will stop the docker
+
+# in another window
+curl -s http://localhost
 ```
 
 See the screenshot below how to pull and run and test whoami
 
 ![whoami1](images/whoami.png)
 
-Once you're good, please stop the docker in the same terminal you have executed "docker run..." by pressing CTRL-C. This will shutdown the whoami docker service. It must be shutdown for the next steps.
+Once you're good, please stop the whoami Docker container in the same terminal you have executed "docker run..." by pressing CTRL-C. This will shutdown the whoami Docker service. It must be shutdown for the next steps.
 
 ## Step 1: Add three hosts into /etc/hosts
 
@@ -63,7 +66,7 @@ And voilà, your keycloak IdP should be up and working
 
 ![keycloakok](images/keycloakok.png)
 
-### Create New Realm in Keycloak
+### Create New Realm in Keycloak or see at the end of this document how to restore from a SQL dump
 
 Follow steps below:
 
@@ -221,7 +224,7 @@ curl -X GET \
 
 ## Debugging Notes
 
-### Accees to Keycloak Dabatabse
+### Access to Keycloak Database
 
 Use this credentials to access
 
@@ -234,3 +237,18 @@ Use this credentials to access
 ## THE END
 
 After this tutorial you should have an application (whoami) that comes without authentication and authorization secured using traefik, keycloak and keycloak-gateeeper. The steps taken in this tutorial hopefully have guided you to the end - to a working setup.
+
+## Further info
+
+If you want to dump the current contents of the keycloak database into a file
+
+```docker exec -ti keycloak-traefik-tutorial-keycloak_db-1 sh -c "pg_dump -U \$POSTGRES_USER \$POSTGRES_DB" >config/db/keycloak_pg_db.sql
+```
+
+If you want to restore the content of a stored SQL dump:
+
+```
+docker compose down
+docker volume rm keycloak-traefik-tutorial_keycloak_db_data_vol
+docker compose up
+```
