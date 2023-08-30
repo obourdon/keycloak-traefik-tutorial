@@ -5,7 +5,7 @@ services:
     image: traefik:v1.7.4-alpine
     hostname: traefik.lab.com
     environment:
-      TZ: Asia/Jakarta
+      TZ: Europe/Paris
     ports:
       - "80:80"
       - "443:443"
@@ -72,7 +72,7 @@ services:
     command: ["-b", "0.0.0.0", "-Dkeycloak.profile.feature.docker=enabled"]
   
   keycloak-gatekeeper:
-    image: keycloak/keycloak-gatekeeper:7.0.0
+    image: quay.io/keycloak/keycloak-gatekeeper:7.0.1
     labels:
      - "traefik.port=3000"
      - "traefik.frontend.rule=Host:service1.lab.com"
