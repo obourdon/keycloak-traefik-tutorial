@@ -252,3 +252,10 @@ docker compose down
 docker volume rm keycloak-traefik-tutorial_keycloak_db_data_vol
 docker compose up
 ```
+
+In this SQL dump file the user defined in the demo-realm is
+
+```
+user: tester
+password: Test1234
+```

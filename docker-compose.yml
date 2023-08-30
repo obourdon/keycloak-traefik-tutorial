@@ -9,6 +9,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: >
@@ -26,6 +27,8 @@ services:
     networks:
       auth_net:
       service_net:
+      infra_net:
+        ipv4_address: 192.168.111.10
     labels:
       traefik.enable: true
   
@@ -63,7 +66,7 @@ services:
       - KEYCLOAK_PASSWORD=password
     networks:
       auth_net:
-    depends_on: 
+    depends_on:
       - traefik
       - keycloak_db
     labels:
@@ -79,7 +82,7 @@ services:
      - "traefik.frontend.rule=Host:service1.lab.com"
      - "traefik.protocol=http"
     restart: always
-    depends_on: 
+    depends_on:
      - keycloak
     networks:
       service_net:
@@ -95,14 +98,83 @@ services:
     image: containous/whoami
     networks:
       service_net:
-    depends_on: 
+      infra_net:
+        ipv4_address: 192.168.111.101
+    depends_on:
       - traefik
     labels:
       - "traefik.enable=false"
 
+  service_2:
+    image: containous/whoami
+    networks:
+      infra_net:
+        ipv4_address: 192.168.111.102
+    depends_on:
+      - traefik
+    labels:
+     - "traefik.port=80"
+     - "traefik.frontend.rule=Host:service2.lab.com"
+     - "traefik.protocol=http"
+
+  dnsmasq:
+    container_name: dnsmasq
+    hostname: dnsmasq
+    image: andyshinn/dnsmasq
+    command: [
+      '--no-daemon',
+      '--log-queries',
+      '--domain-needed',
+      '--bogus-priv',
+      '--strict-order',
+      '--expand-hosts',
+      '--domain=lab.com',
+      '--server=/lab.com/8.8.8.8',
+      '--host-record=svc1.lab.com,192.168.111.101',
+      '--host-record=svc2.lab.com,192.168.111.102',
+      '--host-record=auth.lab.com,192.168.111.10',
+      '--host-record=service1.lab.com,192.168.111.10',
+      '--host-record=service2.lab.com,192.168.111.10',
+      '--mx-host=www.lab.com,192.168.111.10,10',
+      '--address=/lab.com/::'
+    ]
+    expose:
+      - "53/tcp"
+      - "53/udp"
+    cap_add:
+      - NET_ADMIN
+    networks:
+      infra_net:
+        ipv4_address: 192.168.111.2
+
+  squid:
+    container_name: squid
+    hostname: squid
+    image: sameersbn/squid:latest
+    ports:
+      - "3128:3128"
+    volumes:
+      - ./config/squid.conf:/etc/squid/squid.conf:ro
+      - ./config/resolv.conf:/etc/resolv.conf:ro
+    depends_on:
+      - dnsmasq
+    networks:
+      infra_net:
+        ipv4_address: 192.168.111.3
+
+
 networks:
   service_net:
   auth_net:
+  infra_net:
+    driver: bridge
+    # enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+      -
+        subnet: 192.168.111.0/24
+
 
 volumes: 
   keycloak_db_data_vol:
